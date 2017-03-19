@@ -8,8 +8,6 @@ import argparse
 import xlsxwriter
 import requests
 
-my_cwd = os.getcwd()
-
 
 class Colors:
 	CYAN = '\033[96m'
@@ -18,6 +16,14 @@ class Colors:
 	WHITE = '\033[97m'
 	YELLOW = '\033[93m'
 	ENDC = '\033[0m'
+
+
+my_cwd = os.getcwd()
+client_file_path = my_cwd + '/' + 'Clients.txt'
+if not os.path.exists(client_file_path):
+	print(Colors.RED + 'Clients.txt not found. A new file has been created with instructions.' + Colors.ENDC)
+	with open(client_file_path, 'w') as my_clients:
+		my_clients.write('#NAMEOFCLIENT:SCRIP1;SCRIP2;SCRIP3...' + '\n')
 
 
 class DownloadBhavCopy:
@@ -88,20 +94,26 @@ class DownloadBhavCopy:
 
 	def extract_csv(self):
 		for i in self.download_files:
-			bc_zip = zipfile.ZipFile(i['file'], 'r')
+			if os.path.exists(i['file']):
+				bc_zip = zipfile.ZipFile(i['file'], 'r')
 
-			# The name of the csv file is taken from the 0 index of the zip file
-			if i['type'] == 'bse':
-				self.csv_path_bse = self.final_dir + '/' + bc_zip.filelist[0].filename
-			if i['type'] == 'nse':
-				self.csv_path_nse = self.final_dir + '/' + bc_zip.filelist[0].filename
+				# The name of the csv file is taken from the 0 index of the zip file
+				if i['type'] == 'bse':
+					self.csv_path_bse = self.final_dir + '/' + bc_zip.filelist[0].filename
+				if i['type'] == 'nse':
+					self.csv_path_nse = self.final_dir + '/' + bc_zip.filelist[0].filename
 
-			# It's then extracted to the newly created directory
-			bc_zip.extractall(path=self.final_dir)
-			bc_zip.close()
+				# It's then extracted to the newly created directory
+				bc_zip.extractall(path=self.final_dir)
+				bc_zip.close()
 
-			# Delete the zip file after completion
-			os.remove(i['file'])
+				# Delete the zip file after completion
+				os.remove(i['file'])
+			else:
+				if i['type'] == 'bse':
+					self.csv_path_bse = None
+				if i['type'] == 'nse':
+					self.csv_path_nse = None
 
 
 class ParseBhavCopy:
@@ -180,15 +192,7 @@ class ParseBhavCopy:
 			line_number += 1
 
 		""" Write individual worksheets for each client
-		This depends on the existence of Clients.txt in the same dir as the script
-		In case the file is not found, create it, give a message and exit gracefully """
-		client_file_path = my_cwd + '/' + 'Clients.txt'
-		if not os.path.exists(client_file_path):
-			print(Colors.RED + 'Clients.txt not found. A new file has been created with instructions.' + Colors.ENDC)
-			with open(client_file_path, 'w') as my_clients:
-				my_clients.write('#NAMEOFCLIENT:SCRIP1;SCRIP2;SCRIP3...' + '\n')
-			exit(1)
-
+		This depends on the existence of Clients.txt in the same dir as the script """
 		with open(client_file_path, 'r') as client_file:
 			my_clients = client_file.readlines()
 			# Iterate over the list of clients mentioned in Clients.txt
@@ -220,6 +224,7 @@ class ParseBhavCopy:
 								False)
 
 							line_number += 1
+		print(Colors.GREEN + 'Parsing complete.' + Colors.ENDC)
 
 
 def main():
@@ -234,10 +239,10 @@ def main():
 
 	file_date = str(get_bhavcopy.bcdate.day).zfill(2) + '-' + str(get_bhavcopy.bcdate.month).zfill(2) + '-' + str(get_bhavcopy.bcdate.year)
 
-	ParseBhavCopy(get_bhavcopy.csv_path_bse, 'bse', file_date)
-	print(Colors.GREEN + 'Parsing complete.' + Colors.ENDC)
-	ParseBhavCopy(get_bhavcopy.csv_path_nse, 'nse', file_date)
-	print(Colors.GREEN + 'Parsing complete.' + Colors.ENDC)
+	if get_bhavcopy.csv_path_bse:
+		ParseBhavCopy(get_bhavcopy.csv_path_bse, 'bse', file_date)
+	if get_bhavcopy.csv_path_nse:
+		ParseBhavCopy(get_bhavcopy.csv_path_nse, 'nse', file_date)
 
 
 if __name__ == '__main__':
