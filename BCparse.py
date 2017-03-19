@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import os
 import csv
@@ -6,7 +6,6 @@ import zipfile
 import datetime
 import argparse
 import xlsxwriter
-import collections
 import urllib.request
 
 
@@ -176,7 +175,7 @@ class ParseBhavCopy:
 							worksheet.write('D' + ln_str, float(key['scrip_low']))
 							worksheet.write('E' + ln_str, float(key['scrip_close']))
 
-							line_number += 1	
+							line_number += 1
 
 
 def main():
@@ -199,7 +198,7 @@ def main():
 		get_bhavcopy.extract_csv()
 
 		bhavcopy_shenanigans = ParseBhavCopy(get_bhavcopy.csv_path)
-		bhavcopy_shenanigans.parse_csv()	
+		bhavcopy_shenanigans.parse_csv()
 		print(Colors.GREEN + 'Parsing complete.' + Colors.ENDC)
 
 
