@@ -81,6 +81,9 @@ class DownloadBhavCopy:
 		bc_zip.extractall(path=self.final_dir)
 		bc_zip.close()
 
+		# Delete the zip file after completion
+		os.remove(self.final_file)
+
 
 class ParseBhavCopy:
 	def __init__(self, csv_path):
@@ -107,29 +110,39 @@ class ParseBhavCopy:
 
 	def write_xlsx(self):
 		workbook = xlsxwriter.Workbook(self.csv_dir + '/' + self.csv_name[-6:] + '.xlsx')
+		bold = workbook.add_format({'bold': True})
+
+		def write_to_worksheet(this_worksheet, line_number, col_a, col_b, col_c, col_d, col_e, set_bold):
+			if set_bold is True:
+				worksheet.write('A' + str(line_number), col_a, bold)
+				worksheet.write('B' + str(line_number), col_b, bold)
+				worksheet.write('C' + str(line_number), col_c, bold)
+				worksheet.write('D' + str(line_number), col_d, bold)
+				worksheet.write('E' + str(line_number), col_e, bold)
+			else:
+				worksheet.write('A' + str(line_number), col_a)
+				worksheet.write('B' + str(line_number), col_b)
+				worksheet.write('C' + str(line_number), col_c)
+				worksheet.write('D' + str(line_number), col_d)
+				worksheet.write('E' + str(line_number), col_e)
 
 		# Start with writing the entire Bhavcopy to the first worksheet
 		worksheet = workbook.add_worksheet('ALL SCRIPS')
-
 		worksheet.set_column('A:E', 20)
-		bold = workbook.add_format({'bold': True})
 
-		worksheet.write('A1', 'SCRIP NAME', bold)
-		worksheet.write('B1', 'OPEN', bold)
-		worksheet.write('C1', 'HIGH', bold)
-		worksheet.write('D1', 'LOW', bold)
-		worksheet.write('E1', 'CLOSE', bold)
+		write_to_worksheet(worksheet, 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
 
 		line_number = 2
 		for key in self.scrip_data[1:]:
-			ln_str = str(line_number)
-
-			worksheet.write('A' + ln_str, key['scrip_name'])
-			worksheet.write('B' + ln_str, float(key['scrip_open']))
-			worksheet.write('C' + ln_str, float(key['scrip_high']))
-			worksheet.write('D' + ln_str, float(key['scrip_low']))
-			worksheet.write('E' + ln_str, float(key['scrip_close']))
-
+			write_to_worksheet(
+				worksheet,
+				line_number,
+				key['scrip_name'],
+				float(key['scrip_open']),
+				float(key['scrip_high']),
+				float(key['scrip_low']),
+				float(key['scrip_close']),
+				False)
 			line_number += 1
 
 		""" Write individual worksheets for each client
@@ -154,26 +167,23 @@ class ParseBhavCopy:
 				if client_name[0] != '#':
 					worksheet = workbook.add_worksheet(client_name)
 					worksheet.set_column('A:E', 20)
-					bold = workbook.add_format({'bold': True})
 
-					worksheet.write('A1', 'SCRIP NAME', bold)
-					worksheet.write('B1', 'OPEN', bold)
-					worksheet.write('C1', 'HIGH', bold)
-					worksheet.write('D1', 'LOW', bold)
-					worksheet.write('E1', 'CLOSE', bold)
+					write_to_worksheet(worksheet, 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
 
 					line_number = 2
 					for key in self.scrip_data[1:]:
-						ln_str = str(line_number)
-
 						""" Write to the worksheet in case the name of the scrips match
 						This could also use fuzzy matching in case Clients.txt can't be trusted """
 						if key['scrip_name'] in client_scrips:
-							worksheet.write('A' + ln_str, key['scrip_name'])
-							worksheet.write('B' + ln_str, float(key['scrip_open']))
-							worksheet.write('C' + ln_str, float(key['scrip_high']))
-							worksheet.write('D' + ln_str, float(key['scrip_low']))
-							worksheet.write('E' + ln_str, float(key['scrip_close']))
+							write_to_worksheet(
+								worksheet,
+								line_number,
+								key['scrip_name'],
+								float(key['scrip_open']),
+								float(key['scrip_high']),
+								float(key['scrip_low']),
+								float(key['scrip_close']),
+								False)
 
 							line_number += 1
 
