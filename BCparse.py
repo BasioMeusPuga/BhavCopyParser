@@ -42,6 +42,7 @@ class DownloadBhavCopy:
 					print(Colors.RED + 'Date is improper OR not formatted: ' + Colors.GREEN + 'ddmmyy | dd/mm/yy' + Colors.ENDC)
 					exit(1)
 
+		print('Date: ' + Colors.GREEN + str(self.bcdate.day).zfill(2) + '-' + str(self.bcdate.month).zfill(2) + '-' + str(self.bcdate.year) + Colors.ENDC)
 		self.do_the_dew()
 
 	def do_the_dew(self):
@@ -68,13 +69,16 @@ class DownloadBhavCopy:
 			pass
 
 		# This will be iterated over repeatedly
-		self.download_files = [
-		{'file': self.final_dir + '/' + download_file_nse, 'link': download_link_nse, 'type': 'nse'},
-		{'file': self.final_dir + '/' + download_file_bse, 'link': download_link_bse, 'type': 'bse'}]
+		self.download_files = [{
+			'file': self.final_dir + '/' + download_file_nse,
+			'link': download_link_nse, 'type': 'nse'},
+			{
+			'file': self.final_dir + '/' + download_file_bse,
+			'link': download_link_bse, 'type': 'bse'}]
 
 		# Proceed to download both bhavcopies
 		for i in self.download_files:
-			print('Attempting to download: ' + Colors.CYAN + i['file'] + Colors.ENDC)
+			print('Attempting to download: ' + Colors.CYAN + i['link'] + Colors.ENDC)
 
 			""" I shifted to the requests library because urllib.requests can't seem to
 			do headers easily. Especially for url retrievals """
@@ -232,13 +236,19 @@ def main():
 	parser.add_argument('--bcdate', type=str, nargs=1, help='Specify date for Bhavcopy download', metavar='ddmmyy or dd/mm/yy')
 	args = parser.parse_args()
 
+	# Download the Bhavcopies according to the default / specified date
 	if args.bcdate:
 		get_bhavcopy = DownloadBhavCopy(args.bcdate[0])
 	else:
 		get_bhavcopy = DownloadBhavCopy(None)
 
-	file_date = str(get_bhavcopy.bcdate.day).zfill(2) + '-' + str(get_bhavcopy.bcdate.month).zfill(2) + '-' + str(get_bhavcopy.bcdate.year)
+	# Delete the newly created directory in case none of the Bhavcopies get downloaded
+	if not get_bhavcopy.csv_path_nse and not get_bhavcopy.csv_path_bse:
+		os.rmdir(get_bhavcopy.final_dir)
+		exit(1)
 
+	# Or process both of them in turn
+	file_date = str(get_bhavcopy.bcdate.day).zfill(2) + '-' + str(get_bhavcopy.bcdate.month).zfill(2) + '-' + str(get_bhavcopy.bcdate.year)
 	if get_bhavcopy.csv_path_bse:
 		ParseBhavCopy(get_bhavcopy.csv_path_bse, 'bse', file_date)
 	if get_bhavcopy.csv_path_nse:
