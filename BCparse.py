@@ -164,40 +164,28 @@ class ParseBhavCopy:
 
 		def write_to_worksheet(this_worksheet, line_number, col_a, col_b, col_c, col_d, col_e, set_bold):
 			if set_bold is True:
-				worksheet.write('A' + str(line_number), col_a, bold)
-				worksheet.write('B' + str(line_number), col_b, bold)
-				worksheet.write('C' + str(line_number), col_c, bold)
-				worksheet.write('D' + str(line_number), col_d, bold)
-				worksheet.write('E' + str(line_number), col_e, bold)
+				this_worksheet.write('A' + str(line_number), col_a, bold)
+				this_worksheet.write('B' + str(line_number), col_b, bold)
+				this_worksheet.write('C' + str(line_number), col_c, bold)
+				this_worksheet.write('D' + str(line_number), col_d, bold)
+				this_worksheet.write('E' + str(line_number), col_e, bold)
 			else:
-				worksheet.write('A' + str(line_number), col_a)
-				worksheet.write('B' + str(line_number), col_b)
-				worksheet.write('C' + str(line_number), col_c)
-				worksheet.write('D' + str(line_number), col_d)
-				worksheet.write('E' + str(line_number), col_e)
+				this_worksheet.write('A' + str(line_number), col_a)
+				this_worksheet.write('B' + str(line_number), col_b)
+				this_worksheet.write('C' + str(line_number), col_c)
+				this_worksheet.write('D' + str(line_number), col_d)
+				this_worksheet.write('E' + str(line_number), col_e)
 
-		# Start with writing the entire Bhavcopy to the first worksheet
-		worksheet = workbook.add_worksheet('ALL SCRIPS')
-		worksheet.set_column('A:E', 20)
-
-		write_to_worksheet(worksheet, 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
-
-		line_number = 2
-		for key in self.scrip_data[1:]:
-			write_to_worksheet(
-				worksheet,
-				line_number,
-				key['scrip_name'],
-				float(key['scrip_open']),
-				float(key['scrip_high']),
-				float(key['scrip_low']),
-				float(key['scrip_close']),
-				False)
-			line_number += 1
+		# Create main worksheet
+		worksheet_main = workbook.add_worksheet('ALL SCRIPS')
+		worksheet_main.set_column('A:E', 20)
+		write_to_worksheet(worksheet_main, 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
 
 		""" Write individual worksheets for each client
 		This depends on the existence of Clients.txt in the same dir as the script """
 		with open(client_file_path, 'r') as client_file:
+			worksheet_client = {}
+			client_data = []
 			my_clients = client_file.readlines()
 			# Iterate over the list of clients mentioned in Clients.txt
 			for i in my_clients:
@@ -205,29 +193,45 @@ class ParseBhavCopy:
 				client_name = client_info.split(':')[0]
 				client_scrips = client_info.split(':')[1].split(';')
 
-				# Create a new worksheet for each client
 				if client_name[0] != '#':
-					worksheet = workbook.add_worksheet(client_name)
-					worksheet.set_column('A:E', 20)
+					worksheet_client[client_name] = workbook.add_worksheet(client_name)
+					worksheet_client[client_name].set_column('A:E', 20)
 
-					write_to_worksheet(worksheet, 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
+					# A list of client data that will be iterated over for each scrip in the main worksheet
+					client_data.append({
+						'name': client_name,
+						'scrips': client_scrips,
+						'line_number_client': 2})
 
-					line_number = 2
-					for key in self.scrip_data[1:]:
-						""" Write to the worksheet in case the name of the scrips match
-						This could also use fuzzy matching in case Clients.txt can't be trusted """
-						if key['scrip_name'] in client_scrips:
-							write_to_worksheet(
-								worksheet,
-								line_number,
-								key['scrip_name'],
-								float(key['scrip_open']),
-								float(key['scrip_high']),
-								float(key['scrip_low']),
-								float(key['scrip_close']),
-								False)
+					write_to_worksheet(worksheet_client[client_name], 1, 'SCRIP NAME', 'OPEN', 'HIGH', 'LOW', 'CLOSE', True)
 
-							line_number += 1
+		line_number_main = 2
+		for key in self.scrip_data[1:]:
+			write_to_worksheet(
+				worksheet_main,
+				line_number_main,
+				key['scrip_name'],
+				float(key['scrip_open']),
+				float(key['scrip_high']),
+				float(key['scrip_low']),
+				float(key['scrip_close']),
+				False)
+			line_number_main += 1
+
+			for key_client in client_data:
+				if key['scrip_name'] in key_client['scrips']:
+					write_to_worksheet(
+						worksheet_client[key_client['name']],
+						key_client['line_number_client'],
+						key['scrip_name'],
+						float(key['scrip_open']),
+						float(key['scrip_high']),
+						float(key['scrip_low']),
+						float(key['scrip_close']),
+						False)
+
+					key_client['line_number_client'] += 1
+
 		print(Colors.GREEN + 'Parsing complete.' + Colors.ENDC)
 
 
