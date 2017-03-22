@@ -65,7 +65,7 @@ class DownloadBhavCopy:
 		self.final_dir = my_cwd + '/' + str(self.bcdate.day).zfill(2) + '-' + str(self.bcdate.month).zfill(2) + '-' + str(self.bcdate.year)
 		try:
 			os.mkdir(self.final_dir)
-		except:
+		except FileExistsError:
 			pass
 
 		# This will be iterated over repeatedly
@@ -156,25 +156,18 @@ class ParseBhavCopy:
 		self.write_xlsx()
 
 	def write_xlsx(self):
-		if self.stock_exchange == 'bse':
-			workbook = xlsxwriter.Workbook(self.csv_dir + '/' + '(BSE) ' + self.file_date + '.xlsx')
-		elif self.stock_exchange == 'nse':
-			workbook = xlsxwriter.Workbook(self.csv_dir + '/' + '(NSE) ' + self.file_date + '.xlsx')
-		bold = workbook.add_format({'bold': True})
+		workbook = xlsxwriter.Workbook(self.csv_dir + '/' + '(' + self.stock_exchange.upper() + ') ' + self.file_date + '.xlsx')
 
 		def write_to_worksheet(this_worksheet, line_number, col_a, col_b, col_c, col_d, col_e, set_bold):
 			if set_bold is True:
-				this_worksheet.write('A' + str(line_number), col_a, bold)
-				this_worksheet.write('B' + str(line_number), col_b, bold)
-				this_worksheet.write('C' + str(line_number), col_c, bold)
-				this_worksheet.write('D' + str(line_number), col_d, bold)
-				this_worksheet.write('E' + str(line_number), col_e, bold)
+				bold = workbook.add_format({'bold': True})
 			else:
-				this_worksheet.write('A' + str(line_number), col_a)
-				this_worksheet.write('B' + str(line_number), col_b)
-				this_worksheet.write('C' + str(line_number), col_c)
-				this_worksheet.write('D' + str(line_number), col_d)
-				this_worksheet.write('E' + str(line_number), col_e)
+				bold = None
+			this_worksheet.write('A' + str(line_number), col_a, bold)
+			this_worksheet.write('B' + str(line_number), col_b, bold)
+			this_worksheet.write('C' + str(line_number), col_c, bold)
+			this_worksheet.write('D' + str(line_number), col_d, bold)
+			this_worksheet.write('E' + str(line_number), col_e, bold)
 
 		# Create main worksheet
 		worksheet_main = workbook.add_worksheet('ALL SCRIPS')
@@ -194,6 +187,7 @@ class ParseBhavCopy:
 				client_scrips = client_info.split(':')[1].split(';')
 
 				if client_name[0] != '#':
+					# Each client gets their own named worksheet
 					worksheet_client[client_name] = workbook.add_worksheet(client_name)
 					worksheet_client[client_name].set_column('A:E', 20)
 
@@ -237,12 +231,12 @@ class ParseBhavCopy:
 
 def main():
 	parser = argparse.ArgumentParser(description='Download (today\'s) Bhavcopy.')
-	parser.add_argument('--bcdate', type=str, nargs=1, help='Specify date for Bhavcopy download', metavar='ddmmyy or dd/mm/yy')
+	parser.add_argument('--date', type=str, nargs=1, help='Specify date for Bhavcopy download', metavar='ddmmyy or dd/mm/yy')
 	args = parser.parse_args()
 
 	# Download the Bhavcopies according to the default / specified date
-	if args.bcdate:
-		get_bhavcopy = DownloadBhavCopy(args.bcdate[0])
+	if args.date:
+		get_bhavcopy = DownloadBhavCopy(args.date[0])
 	else:
 		get_bhavcopy = DownloadBhavCopy(None)
 
